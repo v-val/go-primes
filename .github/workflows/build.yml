@@ -1,0 +1,168 @@
+# This workflow will build a golang project
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-go
+name: Build App
+
+env:
+  app_id_:            "Primes"
+  go_build_mode_:     "pie"
+#  app_sources_: ./...
+  app_sources_:       .
+
+on:
+  push:
+    #    branches: [ "main" ]
+    tags:
+      - "v*"
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.21.4'
+
+      - name: Set up vars, part I
+        run: |
+          echo "go_package_=github.com/${GITHUB_REPOSITORY}" >> ${GITHUB_ENV}
+          echo "app_version_=${GITHUB_REF_NAME#v}"           >> ${GITHUB_ENV}
+          echo "exe_=$(echo ${app_id_} | tr '[:upper:]' '[:lower:]')" >> ${GITHUB_ENV}
+
+      - name: Set up vars, part II
+        run: |
+          echo "archive_base_=${{ env.exe_ }}-${{ env.app_version_ }}" >> ${GITHUB_ENV}
+          echo "go_build_ldflags_=-X ${{ env.go_package_ }}/build-vars.HomePage=${{ env.go_package_ }} -X ${{ env.go_package_ }}/build-vars.GitRef=${GITHUB_REF_NAME} -X ${{ env.go_package_ }}/build-vars.Version=${{ env.app_version_ }} -X ${{ env.go_package_ }}/build-vars.AppName=${app_id_}" >> ${GITHUB_ENV}
+
+      - name: Prepare
+#          go mod init "github.com/${GITHUB_REPOSITORY}"
+        run: |
+          go mod tidy
+          go get .
+
+      - name: Test
+        run: go test -v ./...
+
+      - name: Build
+        run: |
+          exe_="${{ env.exe_ }}"
+          echo "Build ${exe_} from ${app_id_} ${GITHUB_REPOSITORY} version ${{ env.app_version_ }}"
+
+          env GOOS=linux GOARCH=amd64 go build -o ${exe_} -buildmode=${go_build_mode_} \
+            -ldflags "${{ env.go_build_ldflags_ }}" \
+            -v ${app_sources_}
+          BZIP="-9" tar -cjf ${{ env.archive_base_ }}-linux-amd64.tar.bz2 ${exe_}
+          rm -vf ${exe_}
+
+          env GOOS=linux GOARCH=arm64 go build -o ${exe_} -buildmode=${go_build_mode_} \
+            -ldflags "${{ env.go_build_ldflags_ }}" \
+            -v ${app_sources_}
+          BZIP="-9" tar -cjf ${{ env.archive_base_ }}-linux-arm64.tar.bz2 ${exe_}
+          rm -vf ${exe_}
+
+          env GOOS=darwin GOARCH=amd64 go build -o ${exe_} -buildmode=${go_build_mode_} \
+            -ldflags "${{ env.go_build_ldflags_ }}" \
+            -v ${app_sources_}
+          BZIP="-9" tar -cjf ${{ env.archive_base_ }}-darwin-amd64.tar.bz2 ${exe_}
+          rm -vf ${exe_}
+          
+          env GOOS=darwin GOARCH=arm64 go build -o ${exe_} -buildmode=${go_build_mode_} \
+            -ldflags "${{ env.go_build_ldflags_ }}" \
+            -v ${app_sources_}
+          BZIP="-9" tar -cjf ${{ env.archive_base_ }}-darwin-arm64.tar.bz2 ${exe_}
+          rm -vf ${exe_}
+          
+          env GOOS=windows GOARCH=386 go build -o ${exe_}.exe -buildmode=${go_build_mode_} \
+            -ldflags "${{ env.go_build_ldflags_ }}" \
+            -v ${app_sources_}
+          zip -9 ${{ env.archive_base_ }}-windows-x86.zip ${exe_}.exe
+          rm -vf ${exe_}.exe
+
+          env GOOS=windows GOARCH=amd64 go build -o ${exe_}.exe -buildmode=${go_build_mode_} \
+            -ldflags "${{ env.go_build_ldflags_ }}" \
+            -v ${app_sources_}
+          zip -9 ${{ env.archive_base_ }}-windows-amd64.zip ${exe_}.exe
+          rm -vf ${exe_}.exe
+
+      #      - name: version
+      #        run: echo "::set-output name=version::0.0.5"
+      #        id: version
+
+      - name: release
+        uses: actions/create-release@v1
+        id: create_release
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          draft: false
+          prerelease: false
+          #          release_name: Release ${{ steps.version.outputs.version }}
+          release_name: Release ${{ github.ref }}
+          tag_name: ${{ github.ref }}
+          body_path: CHANGES.md
+
+      - name: upload linux amd64 artifact
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ${{ env.archive_base_ }}-linux-amd64.tar.bz2
+          asset_name: ${{ env.archive_base_ }}-linux-amd64.tar.bz2
+          asset_content_type: application/x-bzip2
+
+      - name: upload linux arm64 artifact
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ${{ env.archive_base_ }}-linux-arm64.tar.bz2
+          asset_name: ${{ env.archive_base_ }}-linux-arm64.tar.bz2
+          asset_content_type: application/x-bzip2
+
+      - name: upload darwin amd64 artifact
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ${{ env.archive_base_ }}-darwin-amd64.tar.bz2
+          asset_name: ${{ env.archive_base_ }}-darwin-amd64.tar.bz2
+          asset_content_type: application/x-bzip2
+
+      - name: upload darwin arm64 artifact
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ${{ env.archive_base_ }}-darwin-arm64.tar.bz2
+          asset_name: ${{ env.archive_base_ }}-darwin-arm64.tar.bz2
+          asset_content_type: application/x-bzip2
+
+      - name: upload windows amd64 artifact
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ${{ env.archive_base_ }}-windows-amd64.zip
+          asset_name: ${{ env.archive_base_ }}-windows-amd64.zip
+          asset_content_type: application/zip
+
+      - name: upload windows x86 artifact
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ${{ env.archive_base_ }}-windows-x86.zip
+          asset_name: ${{ env.archive_base_ }}-windows-x86.zip
+          asset_content_type: application/zip
