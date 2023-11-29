@@ -43,18 +43,18 @@ func main() {
 		if err != nil {
 			L.Panic(err)
 		}
-		L.Infof("loaded %d primes: %s.", len(r), P(r))
+		L.Infof("loaded %d primes: %s.", len(r), HeadTail{r})
 		primes = r
 	} else {
 		r := make([]prime_value_type, 0, opts.NPrimes)
 		r = MakePrimes(r, opts.NPrimes)
-		L.Infof("built %d primes: %s.", len(r), P(r))
+		L.Infof("built %d primes: %s.", len(r), HeadTail{r})
 		//-r/Volumes/RAMDisk/primes.dat.lzma2
 		DumpPrimes(r, !opts.NoCompress)
 		primes = r
 	}
 
 	if opts.Port != 0 {
-		L.Infof("have %d primes: %s.", len(primes), P(primes))
+		L.Infof("have %d primes: %s.", len(primes), HeadTail{primes})
 	}
 }
