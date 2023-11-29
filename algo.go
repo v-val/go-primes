@@ -24,7 +24,7 @@ func MakePrimes(primes []prime_value_type, nprimes int) []prime_value_type {
 
 	primes = append(primes, 2, 3)
 
-	L.Infof("Start search of %d primes", nprimes)
+	L.Debugf("Start search of %d primes", nprimes)
 	startTime := time.Now()
 
 	for n := primes[len(primes)-1]; len(primes) < nprimes; n += 2 {
@@ -35,7 +35,7 @@ func MakePrimes(primes []prime_value_type, nprimes int) []prime_value_type {
 
 	finishTime := time.Now()
 	jobDuration := finishTime.Sub(startTime)
-	L.Infof("Done: %d primes found in %v at %.1f/s, last %v (0x%016[4]x)",
+	L.Debugf("found %d primes in %v at %.1f/s, last %v (0x%016[4]x)",
 		len(primes), jobDuration, float64(nprimes)/jobDuration.Seconds(), primes[len(primes)-1])
 	return primes
 }

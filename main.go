@@ -16,6 +16,7 @@ type Options struct {
 	ReadFile   string `short:"r" description:"Read already found primes from file"`
 	NoCompress bool   `short:"C" description:"Do not compress output file"`
 	TestOnly   bool   `short:"T" description:"Run only test then exit"`
+	Port       uint16 `short:"p" description:"Port to listen"`
 }
 
 func main() {
@@ -35,15 +36,25 @@ func main() {
 
 	}
 
+	var primes []prime_value_type
+
 	if opts.ReadFile != "" {
-		primes, err := ReadPrimesDump(opts.ReadFile)
+		r, err := ReadPrimesDump(opts.ReadFile)
 		if err != nil {
 			L.Panic(err)
 		}
-		L.Infof("read %d primes %s", len(primes), P(primes))
+		L.Infof("loaded %d primes: %s.", len(r), P(r))
+		primes = r
 	} else {
-		primes := make([]prime_value_type, 0, opts.NPrimes)
-		primes = MakePrimes(primes, opts.NPrimes)
-		DumpPrimes(primes, !opts.NoCompress)
+		r := make([]prime_value_type, 0, opts.NPrimes)
+		r = MakePrimes(r, opts.NPrimes)
+		L.Infof("built %d primes: %s.", len(r), P(r))
+		//-r/Volumes/RAMDisk/primes.dat.lzma2
+		DumpPrimes(r, !opts.NoCompress)
+		primes = r
+	}
+
+	if opts.Port != 0 {
+		L.Infof("have %d primes: %s.", len(primes), P(primes))
 	}
 }

@@ -63,14 +63,14 @@ func DumpPrimes(primes []prime_value_type, isXzEnabled bool) int {
 
 	{
 		d := time.Now().Sub(t)
-		L.Infof(`Binarize %d primes as %d bytes in %v (%fB/s)`, len(primes), len(buf), d, float64(len(buf))/d.Seconds())
+		L.Debugf(`serialize %d primes as %d bytes in %v (%fB/s)`, len(primes), len(buf), d, float64(len(buf))/d.Seconds())
 	}
 
 	if err != nil {
 		L.Errorf(`Fail to dump to "%s": %v`, file, err)
 	} else {
 		d := time.Now().Sub(t2)
-		L.Infof(`Wrote %d primes to "%s" as %dB in %v`, len(primes), file, r, d)
+		L.Debugf(`dumped %d primes to "%s" as %dB in %v`, len(primes), file, r, d)
 	}
 
 	return r
@@ -106,7 +106,7 @@ func ReadPrimesDump(file string) ([]prime_value_type, error) {
 			if err == io.EOF {
 				err = nil
 			}
-			L.Debugf("Got %d bytes, %d primes:", readTotal, len(result))
+			L.Debugf("Got %d bytes, %d primes", readTotal, len(result))
 		}
 	}
 	return result, err
