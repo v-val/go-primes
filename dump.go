@@ -28,7 +28,7 @@ func DumpPrimes(primes []prime_value_type, isXzEnabled bool) int {
 
 	file := filepath.Join(GetTemp(), "primes.dat")
 	if isXzEnabled {
-		file += ".xz"
+		file += ".lzma2"
 	}
 
 	t := time.Now()
