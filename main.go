@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"github.com/jessevdk/go-flags"
 	L "github.com/sirupsen/logrus"
 	"os"
@@ -56,5 +57,23 @@ func main() {
 
 	if opts.Port != 0 {
 		L.Infof("have %d primes: %s.", len(primes), HeadTail{primes})
+		hostname, err := os.Hostname()
+		if err != nil {
+			L.Panic(err)
+		}
+		L.Tracef("hostname %s", hostname)
+		address := fmt.Sprintf(":%d", opts.Port)
+		L.Infof("start service over %s", address)
+		//h := func(w http.ResponseWriter, _ *http.Request) {
+		//	io.WriteString(w, "XXX\r\n")
+		//}
+		//http.HandleFunc("/", h)
+		//L.Fatal(http.ListenAndServe(address, nil))
+		service := &HttpService{
+			Id:     hostname,
+			Port:   opts.Port,
+			Values: primes,
+		}
+		L.Fatal(service.Run())
 	}
 }
