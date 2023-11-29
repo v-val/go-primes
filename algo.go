@@ -27,7 +27,7 @@ func MakePrimes(primes []prime_value_type, nprimes int) []prime_value_type {
 	L.Debugf("Start search of %d primes", nprimes)
 	startTime := time.Now()
 
-	for n := primes[len(primes)-1]; len(primes) < nprimes; n += 2 {
+	for n := primes[len(primes)-1] + 2; len(primes) < nprimes; n += 2 {
 		if IsPrime(primes, n) {
 			primes = append(primes, n)
 		}
